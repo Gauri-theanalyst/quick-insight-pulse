@@ -14,27 +14,21 @@ import {
   Star,
   CheckCircle,
   Globe,
-  Smartphone
+  Smartphone,
+  Share2,
+  QrCode,
+  Download
 } from 'lucide-react';
+import { surveyStorage, type Survey, type Question } from '@/lib/survey-storage';
+import QRCodeGenerator from './QRCodeGenerator';
 
-interface Question {
-  id: string;
-  type: 'multiple-choice' | 'text' | 'rating' | 'yes-no';
-  title: string;
-  options?: string[];
-  required: boolean;
-}
-
-interface Survey {
-  title: string;
-  description: string;
-  questions: Question[];
-}
+// Remove the duplicate interface definitions since we're importing them
 
 const questionTypes = [
   { id: 'multiple-choice', label: 'Multiple Choice', icon: CheckCircle },
   { id: 'text', label: 'Text Input', icon: Users },
   { id: 'rating', label: 'Rating Scale', icon: Star },
+  { id: 'nps', label: 'NPS Score', icon: BarChart3 },
   { id: 'yes-no', label: 'Yes/No', icon: CheckCircle }
 ];
 
@@ -74,11 +68,14 @@ const templates = [
 ];
 
 export default function SurveyBuilder() {
-  const [currentStep, setCurrentStep] = useState<'template' | 'build' | 'preview'>('template');
+  const [currentStep, setCurrentStep] = useState<'template' | 'build' | 'preview' | 'share'>('template');
   const [survey, setSurvey] = useState<Survey>({
+    id: '',
     title: '',
     description: '',
-    questions: []
+    questions: [],
+    createdAt: '',
+    isActive: false
   });
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
 
@@ -94,6 +91,19 @@ export default function SurveyBuilder() {
       ...prev,
       questions: [...prev.questions, newQuestion]
     }));
+  };
+
+  const saveSurvey = () => {
+    const surveyToSave: Survey = {
+      ...survey,
+      id: survey.id || surveyStorage.generateId(),
+      createdAt: survey.createdAt || new Date().toISOString(),
+      isActive: true
+    };
+    
+    surveyStorage.saveSurvey(surveyToSave);
+    setSurvey(surveyToSave);
+    setCurrentStep('share');
   };
 
   const updateQuestion = (id: string, updates: Partial<Question>) => {
@@ -117,6 +127,7 @@ export default function SurveyBuilder() {
     const template = templates.find(t => t.id === templateId);
     if (template) {
       setSurvey({
+        id: '',
         title: template.title,
         description: template.description,
         questions: [
@@ -133,7 +144,9 @@ export default function SurveyBuilder() {
             options: ['Customer service', 'Product quality', 'Pricing', 'Delivery speed'],
             required: false
           }
-        ]
+        ],
+        createdAt: '',
+        isActive: false
       });
       setCurrentStep('build');
     }
@@ -244,7 +257,11 @@ export default function SurveyBuilder() {
                   <Eye className="w-4 h-4 mr-2" />
                   Preview
                 </Button>
-                <Button className="gradient-primary text-white">
+                <Button 
+                  className="gradient-primary text-white"
+                  onClick={saveSurvey}
+                  disabled={!survey.title || survey.questions.length === 0}
+                >
                   <Zap className="w-4 h-4 mr-2" />
                   Publish Survey
                 </Button>
@@ -407,6 +424,125 @@ export default function SurveyBuilder() {
                     <span className="text-muted-foreground">Completion Rate</span>
                     <Badge variant="secondary">85%</Badge>
                   </div>
+                </div>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (currentStep === 'share') {
+    const surveyUrl = `${window.location.origin}/survey/${survey.id}`;
+    
+    return (
+      <div className="min-h-screen bg-background">
+        {/* Header */}
+        <div className="border-b border-border bg-card-elevated">
+          <div className="container mx-auto px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold">Survey Published!</h1>
+                <p className="text-muted-foreground">
+                  Your survey is now live and ready to collect responses
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <Button variant="outline" onClick={() => setCurrentStep('build')}>
+                  Edit Survey
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    const csvContent = surveyStorage.exportToCSV(survey.id);
+                    if (csvContent) {
+                      const blob = new Blob([csvContent], { type: 'text/csv' });
+                      const url = URL.createObjectURL(blob);
+                      const link = document.createElement('a');
+                      link.href = url;
+                      link.download = `${survey.title.replace(/\s+/g, '-')}-responses.csv`;
+                      link.click();
+                    }
+                  }}
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Export CSV
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="container mx-auto px-6 py-8">
+          <div className="grid lg:grid-cols-2 gap-8">
+            {/* QR Code and Sharing */}
+            <QRCodeGenerator 
+              surveyUrl={surveyUrl}
+              surveyTitle={survey.title}
+            />
+
+            {/* Survey Stats */}
+            <div className="space-y-6">
+              <Card className="p-6">
+                <h3 className="font-semibold mb-4">Survey Information</h3>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Title</label>
+                    <p className="font-medium">{survey.title}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Description</label>
+                    <p className="text-sm">{survey.description}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Questions</label>
+                    <p className="font-medium">{survey.questions.length}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Created</label>
+                    <p className="text-sm">{new Date(survey.createdAt).toLocaleDateString()}</p>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-6">
+                <h3 className="font-semibold mb-4">Quick Actions</h3>
+                <div className="space-y-3">
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start"
+                    onClick={() => window.open(`/analytics/${survey.id}`, '_blank')}
+                  >
+                    <BarChart3 className="w-4 h-4 mr-2" />
+                    View Analytics
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start"
+                    onClick={() => window.open(surveyUrl, '_blank')}
+                  >
+                    <Eye className="w-4 h-4 mr-2" />
+                    Preview Survey
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start"
+                    onClick={() => {
+                      const csvContent = surveyStorage.exportToCSV(survey.id);
+                      if (csvContent) {
+                        const blob = new Blob([csvContent], { type: 'text/csv' });
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = `${survey.title.replace(/\s+/g, '-')}-responses.csv`;
+                        link.click();
+                      }
+                    }}
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Export Responses
+                  </Button>
                 </div>
               </Card>
             </div>

@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import SurveyBuilder from '@/components/SurveyBuilder';
 import AnalyticsDashboard from '@/components/AnalyticsDashboard';
+import { surveyStorage, type Survey } from '@/lib/survey-storage';
 import { 
   Zap, 
   BarChart3, 
@@ -48,6 +49,27 @@ const stats = [
 
 const Index = () => {
   const [currentView, setCurrentView] = useState<'home' | 'builder' | 'analytics'>('home');
+  const [surveys, setSurveys] = useState<Survey[]>([]);
+
+  useEffect(() => {
+    const allSurveys = surveyStorage.getAllSurveys();
+    setSurveys(allSurveys);
+  }, []);
+
+  // Update stats based on real data
+  const stats = [
+    { label: 'Surveys Created', value: `${surveys.length}` },
+    { label: 'Responses Collected', value: `${surveys.reduce((total, survey) => {
+      const responses = surveyStorage.getSurveyResponses(survey.id);
+      return total + responses.length;
+    }, 0)}` },
+    { label: 'Active Surveys', value: `${surveys.filter(s => s.isActive).length}` },
+    { label: 'Avg Completion Rate', value: `${surveys.length > 0 ? 
+      (surveys.reduce((total, survey) => {
+        const analytics = surveyStorage.getSurveyAnalytics(survey.id);
+        return total + (analytics?.completionRate || 0);
+      }, 0) / surveys.length).toFixed(1) : 0}%` }
+  ];
 
   if (currentView === 'builder') {
     return <SurveyBuilder />;

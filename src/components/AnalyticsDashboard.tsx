@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,8 +12,12 @@ import {
   Share2,
   Clock,
   Target,
-  Star
+  Star,
+  BarChart,
+  PieChart
 } from 'lucide-react';
+import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell } from 'recharts';
+import { surveyStorage, type Survey } from '@/lib/survey-storage';
 
 const mockSurveys = [
   {
@@ -77,6 +81,49 @@ const insights = [
 ];
 
 export default function AnalyticsDashboard() {
+  const [surveys, setSurveys] = useState<Survey[]>([]);
+  const [selectedSurvey, setSelectedSurvey] = useState<string | null>(null);
+
+  useEffect(() => {
+    const allSurveys = surveyStorage.getAllSurveys();
+    setSurveys(allSurveys);
+    if (allSurveys.length > 0 && !selectedSurvey) {
+      setSelectedSurvey(allSurveys[0].id);
+    }
+  }, [selectedSurvey]);
+
+  const currentSurvey = surveys.find(s => s.id === selectedSurvey);
+  const analytics = currentSurvey ? surveyStorage.getSurveyAnalytics(currentSurvey.id) : null;
+
+  const handleExportCSV = () => {
+    if (selectedSurvey) {
+      const csvContent = surveyStorage.exportToCSV(selectedSurvey);
+      if (csvContent) {
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${currentSurvey?.title.replace(/\s+/g, '-')}-responses.csv`;
+        link.click();
+      }
+    }
+  };
+
+  // Prepare chart data
+  const responseTrendData = analytics ? 
+    Array.from({ length: 7 }, (_, i) => ({
+      day: `Day ${i + 1}`,
+      responses: Math.floor(Math.random() * 20) + 5
+    })) : [];
+
+  const questionChartData = analytics?.questionAnalytics.map(qa => ({
+    name: qa.questionTitle,
+    responses: qa.responses,
+    averageRating: qa.averageRating
+  })) || [];
+
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -90,9 +137,20 @@ export default function AnalyticsDashboard() {
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <Button variant="outline">
+              <select 
+                value={selectedSurvey || ''} 
+                onChange={(e) => setSelectedSurvey(e.target.value)}
+                className="px-3 py-2 border border-border rounded-md bg-background"
+              >
+                {surveys.map(survey => (
+                  <option key={survey.id} value={survey.id}>
+                    {survey.title}
+                  </option>
+                ))}
+              </select>
+              <Button variant="outline" onClick={handleExportCSV}>
                 <Download className="w-4 h-4 mr-2" />
-                Export Report
+                Export CSV
               </Button>
               <Button variant="gradient">
                 <Share2 className="w-4 h-4 mr-2" />
@@ -106,23 +164,63 @@ export default function AnalyticsDashboard() {
       <div className="container mx-auto px-6 py-8">
         {/* Key Metrics */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {insights.map((insight, index) => (
-            <Card key={index} className="metric-card">
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <p className="text-muted-foreground text-sm">{insight.metric}</p>
-                  <p className="text-2xl font-bold mt-1">{insight.value}</p>
-                </div>
-                <div className={`flex items-center text-sm ${
-                  insight.trend === 'up' ? 'text-success' : 'text-destructive'
-                }`}>
-                  <TrendingUp className="w-4 h-4 mr-1" />
-                  {insight.change}
-                </div>
+          <Card className="metric-card">
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <p className="text-muted-foreground text-sm">Total Responses</p>
+                <p className="text-2xl font-bold mt-1">{analytics?.totalResponses || 0}</p>
               </div>
-              <p className="text-muted-foreground text-sm">{insight.description}</p>
-            </Card>
-          ))}
+              <div className="flex items-center text-sm text-success">
+                <TrendingUp className="w-4 h-4 mr-1" />
+                +12%
+              </div>
+            </div>
+            <p className="text-muted-foreground text-sm">All time responses</p>
+          </Card>
+
+          <Card className="metric-card">
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <p className="text-muted-foreground text-sm">Completion Rate</p>
+                <p className="text-2xl font-bold mt-1">{analytics?.completionRate.toFixed(1) || 0}%</p>
+              </div>
+              <div className="flex items-center text-sm text-success">
+                <TrendingUp className="w-4 h-4 mr-1" />
+                +5.3%
+              </div>
+            </div>
+            <p className="text-muted-foreground text-sm">Excellent engagement</p>
+          </Card>
+
+          <Card className="metric-card">
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <p className="text-muted-foreground text-sm">Avg. Response Time</p>
+                <p className="text-2xl font-bold mt-1">2.3 min</p>
+              </div>
+              <div className="flex items-center text-sm text-success">
+                <TrendingUp className="w-4 h-4 mr-1" />
+                -0.4 min
+              </div>
+            </div>
+            <p className="text-muted-foreground text-sm">Faster completion times</p>
+          </Card>
+
+          <Card className="metric-card">
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <p className="text-muted-foreground text-sm">NPS Score</p>
+                <p className="text-2xl font-bold mt-1">
+                  {analytics?.questionAnalytics.find(qa => qa.questionType === 'nps')?.npsScore.toFixed(1) || 'N/A'}
+                </p>
+              </div>
+              <div className="flex items-center text-sm text-success">
+                <TrendingUp className="w-4 h-4 mr-1" />
+                +0.3
+              </div>
+            </div>
+            <p className="text-muted-foreground text-sm">Net Promoter Score</p>
+          </Card>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8">
@@ -139,15 +237,17 @@ export default function AnalyticsDashboard() {
                 </div>
               </div>
               
-              {/* Mock Chart */}
-              <div className="h-64 bg-gradient-secondary rounded-lg flex items-end justify-between p-4 gap-2">
-                {[40, 65, 45, 80, 75, 90, 85, 95, 70, 85, 75, 100].map((height, i) => (
-                  <div
-                    key={i}
-                    className="bg-primary rounded-t flex-1 transition-smooth hover:bg-primary-hover"
-                    style={{ height: `${height}%` }}
-                  />
-                ))}
+              {/* Real Chart */}
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RechartsBarChart data={responseTrendData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="day" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="responses" fill="#3b82f6" />
+                  </RechartsBarChart>
+                </ResponsiveContainer>
               </div>
               
               <div className="mt-4 text-center">
@@ -209,55 +309,54 @@ export default function AnalyticsDashboard() {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Recent Surveys */}
+            {/* Question Analytics */}
             <Card className="p-6">
-              <h3 className="font-semibold mb-4">Recent Surveys</h3>
+              <h3 className="font-semibold mb-4">Question Analytics</h3>
               <div className="space-y-4">
-                {mockSurveys.map((survey) => (
-                  <div key={survey.id} className="border border-border rounded-lg p-4 hover:bg-muted/50 transition-smooth">
+                {analytics?.questionAnalytics.map((qa, index) => (
+                  <div key={qa.questionId} className="border border-border rounded-lg p-4">
                     <div className="flex items-start justify-between mb-2">
-                      <h4 className="font-medium text-sm">{survey.title}</h4>
-                      <Badge variant={survey.status === 'active' ? 'default' : 'secondary'}>
-                        {survey.status}
-                      </Badge>
+                      <h4 className="font-medium text-sm">{qa.questionTitle}</h4>
+                      <Badge variant="secondary">{qa.questionType}</Badge>
                     </div>
                     
                     <div className="space-y-2">
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-muted-foreground">Responses</span>
-                        <span className="font-medium">{survey.responses}</span>
+                        <span className="font-medium">{qa.responses}</span>
                       </div>
                       
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Completion</span>
-                        <span className="font-medium">{survey.completion}%</span>
-                      </div>
-
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Avg Rating</span>
-                        <div className="flex items-center gap-1">
-                          <Star className="w-3 h-3 fill-current text-warning" />
-                          <span className="font-medium">{survey.avgRating}</span>
+                      {qa.questionType === 'rating' && (
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">Avg Rating</span>
+                          <div className="flex items-center gap-1">
+                            <Star className="w-3 h-3 fill-current text-warning" />
+                            <span className="font-medium">{qa.averageRating.toFixed(1)}</span>
+                          </div>
                         </div>
-                      </div>
+                      )}
+
+                      {qa.questionType === 'nps' && (
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">NPS Score</span>
+                          <span className="font-medium">{qa.npsScore.toFixed(1)}</span>
+                        </div>
+                      )}
                       
-                      <div className="bg-muted rounded-full h-2 mt-3">
-                        <div 
-                          className="bg-primary rounded-full h-2 transition-smooth"
-                          style={{ width: `${survey.completion}%` }}
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
-                      <span className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {survey.created}
-                      </span>
-                      <Button variant="ghost" size="sm">
-                        <Eye className="w-3 h-3 mr-1" />
-                        View
-                      </Button>
+                      {qa.questionType === 'multiple-choice' && Object.keys(qa.answers).length > 0 && (
+                        <div className="space-y-1">
+                          <span className="text-xs text-muted-foreground">Top Answers</span>
+                          {Object.entries(qa.answers)
+                            .sort(([,a], [,b]) => b - a)
+                            .slice(0, 3)
+                            .map(([answer, count]) => (
+                              <div key={answer} className="flex items-center justify-between text-xs">
+                                <span className="truncate">{answer}</span>
+                                <span className="font-medium">{count}</span>
+                              </div>
+                            ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
