@@ -352,9 +352,7 @@ We're constantly working to enhance QuickSurvey with new capabilities. Here's wh
 - **Customer Satisfaction (CSAT)** - Industry-specific CSAT surveys
 - **Employee Engagement** - HR-focused survey templates
 - **Product Research** - Feature prioritization, usability testing
-- **Healthcare Surveys** - Patient satisfaction, clinical research
-
-Engineer
+- **Healthcare Surveys** - Patient satisfaction, clinical research Engineer
 
 🧠 Project Vibe
 
