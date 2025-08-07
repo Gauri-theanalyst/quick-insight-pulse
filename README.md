@@ -49,35 +49,35 @@
 
 #### Core Improvements:
 
-* [ ] Survey Templates for common use cases (Restaurant, Product Launch, Event)
-* [ ] Drag-and-Drop Survey Builder UI
-* [ ] Improved Data Validation (required fields, unique response logic)
-* [ ] Session-based Temporary Storage for unauthenticated users
+*  Survey Templates for common use cases (Restaurant, Product Launch, Event)
+*  Drag-and-Drop Survey Builder UI
+*  Improved Data Validation (required fields, unique response logic)
+*  Session-based Temporary Storage for unauthenticated users
 
 #### Enhanced Analytics:
 
-* [ ] Charts & Graphs using Chart.js (bar, pie, line)
-* [ ] Sentiment Analysis on open text
-* [ ] Completion Time Stats
-* [ ] Device/Location Heatmaps
+*  Charts & Graphs using Chart.js (bar, pie, line)
+*  Sentiment Analysis on open text
+*  Completion Time Stats
+*  Device/Location Heatmaps
 
 #### AI-Powered Features (Stretch Goals):
 
-* [ ] Auto-generate follow-up questions based on responses
-* [ ] Text summarization for long-form answers
-* [ ] Predictive scoring for satisfaction trends
+*  Auto-generate follow-up questions based on responses
+*  Text summarization for long-form answers
+*  Predictive scoring for satisfaction trends
 
 #### Optional User Management:
 
-* [ ] Basic user auth for saving multiple surveys
-* [ ] Survey expiration & visibility controls
-* [ ] Tiered access (free vs premium features)
+*  Basic user auth for saving multiple surveys
+*  Survey expiration & visibility controls
+*  Tiered access (free vs premium features)
 
 #### Integrations:
 
-* [ ] QR Code Generation for quick access
-* [ ] Email sending to distribute surveys
-* [ ] API access for third-party CRMs
+*  QR Code Generation for quick access
+*  Email sending to distribute surveys
+*  API access for third-party CRMs
 
 ---
 
