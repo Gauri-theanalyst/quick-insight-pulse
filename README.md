@@ -1,6 +1,6 @@
 # QuickSurvey - Lightweight Survey Tool
 
-Quick Insight Pulse is a minimal, student-friendly survey tool that lets users quickly build, share, and analyze surveys — without requiring accounts or complex setup. It’s designed as a capstone-style project at the intersection of Business Analytics and Web Development.
+Quick Insight Pulse is a minimal, student-friendly survey tool that lets users quickly build, share, and analyze surveys without requiring accounts or complex setup. It’s designed as a capstone-style project at the intersection of Business Analytics and Web Development.
 
 ## ✨ Features
 
