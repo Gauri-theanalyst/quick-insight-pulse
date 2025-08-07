@@ -42,6 +42,10 @@ Professional survey platform with focus on speed and insights
     --border: 240 19% 90%;
     --input: 240 19% 95%;
     --ring: 250 84% 54%;
+    
+    /* Popover */
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 19% 16%;
 
     /* Special Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(250 84% 54%), hsl(280 89% 60%));
@@ -116,6 +120,10 @@ Professional survey platform with focus on speed and insights
     --sidebar-accent-foreground: 240 19% 90%;
     --sidebar-border: 240 19% 15%;
     --sidebar-ring: 250 84% 60%;
+    
+    /* Popover dark mode */
+    --popover: 240 19% 9%;
+    --popover-foreground: 240 19% 95%;
   }
 }
 
